@@ -217,24 +217,32 @@ namespace Oxide.Plugins
                     };
 
                     cuiElements.Add(
-                        new CuiLabel
+                        new CuiElement
                         {
-                            Text =
+                            Components =
                             {
-                                Text = PlaceholderText,
-                                Align = TextAnchor.MiddleCenter,
-                                Color = PlaceholderColor,
-                                FontSize = _pluginConfig.UISettings.TextSize,
+                                new CuiTextComponent
+                                {
+                                    Text = PlaceholderText,
+                                    Align = TextAnchor.MiddleCenter,
+                                    Color = PlaceholderColor,
+                                    FontSize = _pluginConfig.UISettings.TextSize,
+                                },
+                                new CuiOutlineComponent
+                                {
+                                    Color = "0 0 0 1",
+                                    Distance = "0.75 0.75"
+                                },
+                                new CuiRectTransformComponent
+                                {
+                                    AnchorMin = "0 0",
+                                    AnchorMax = "0 0",
+                                    OffsetMin = $"{_pluginConfig.UISettings.TextSize * -3} 0",
+                                    OffsetMax = $"{_pluginConfig.UISettings.TextSize * 3} {_pluginConfig.UISettings.TextSize * 1.5f}",
+                                },
                             },
-                            RectTransform =
-                            {
-                                AnchorMin = "0 0",
-                                AnchorMax = "0 0",
-                                OffsetMin = $"{_pluginConfig.UISettings.TextSize * -3} 0",
-                                OffsetMax = $"{_pluginConfig.UISettings.TextSize * 3} {_pluginConfig.UISettings.TextSize * 1.5f}",
-                            }
-                        },
-                        PlaceholderUIName
+                            Parent = PlaceholderUIName,
+                        }
                     );
 
                     _cachedJson = CuiHelper.ToJson(cuiElements);
