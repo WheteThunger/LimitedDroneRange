@@ -314,8 +314,8 @@ namespace Oxide.Plugins
 
         private class ColorConfig
         {
-            [JsonProperty("DistanceFromMax")]
-            public int DistanceFromMax;
+            [JsonProperty("DistanceRemaining")]
+            public int DistanceRemaining;
 
             [JsonProperty("Color")]
             public string Color;
@@ -349,12 +349,12 @@ namespace Oxide.Plugins
             {
                 new ColorConfig
                 {
-                    DistanceFromMax = 50,
+                    DistanceRemaining = 50,
                     Color = "1 0.2 0.2 1",
                 },
                 new ColorConfig
                 {
-                    DistanceFromMax = 100,
+                    DistanceRemaining = 100,
                     Color = "1 0.5 0 1",
                 },
             };
@@ -368,7 +368,7 @@ namespace Oxide.Plugins
 
                 foreach (var colorConfig in DynamicColors)
                 {
-                    if (distanceFromMax < colorConfig.DistanceFromMax)
+                    if (distanceFromMax < colorConfig.DistanceRemaining)
                         return colorConfig.Color;
                 }
 

@@ -50,11 +50,11 @@ Default configuration:
     "OutOfRangeColor": "1 0.2 0.2 1",
     "DynamicColors": [
       {
-        "DistanceFromMax": 50,
+        "DistanceRemaining": 50,
         "Color": "1 0.2 0.2 1"
       },
       {
-        "DistanceFromMax": 100,
+        "DistanceRemaining": 100,
         "Color": "1 0.5 0 1"
       }
     ],
