@@ -22,6 +22,8 @@ namespace Oxide.Plugins
 
         private const string PermissionProfilePrefix = "limiteddronerange";
 
+        private UIManager _uiManager = new UIManager();
+
         #endregion
 
         #region Hooks
@@ -50,7 +52,7 @@ namespace Oxide.Plugins
 
         private void Unload()
         {
-            RangeChecker.DestroyAll();
+            RangeLimiter.DestroyAll();
             _pluginConfig = null;
             _pluginInstance = null;
         }
@@ -63,7 +65,7 @@ namespace Oxide.Plugins
 
             if (!IsWithinRange(drone, station, maxRange))
             {
-                UI.CreateOutOfRangeUI(player);
+                _uiManager.CreateOutOfRangeUI(player);
                 return false;
             }
 
@@ -76,12 +78,12 @@ namespace Oxide.Plugins
             if (!ShouldLimitRange(drone, station, player, out maxRange))
                 return;
 
-            RangeChecker.Create(player, station, drone, maxRange);
+            RangeLimiter.Create(player, station, drone, maxRange);
         }
 
         private void OnBookmarkControlEnded(ComputerStation station, BasePlayer player, Drone drone)
         {
-            RangeChecker.Destroy(player);
+            RangeLimiter.Destroy(player);
         }
 
         #endregion
@@ -94,11 +96,8 @@ namespace Oxide.Plugins
             return hookResult is bool && (bool)hookResult == false;
         }
 
-        private static float GetDistance(BaseEntity entity1, BaseEntity entity2) =>
-            Vector3.Distance(entity1.transform.position, entity2.transform.position);
-
         private static bool IsWithinRange(Drone drone, ComputerStation station, float range) =>
-            station.Distance(drone) < range;
+            Vector3.Distance(station.transform.position, drone.transform.position) < range;
 
         private static string GetProfilePermission(string profileSuffix) =>
             $"{PermissionProfilePrefix}.{profileSuffix}";
@@ -114,14 +113,14 @@ namespace Oxide.Plugins
 
         #endregion
 
-        private class RangeChecker : EntityComponent<BasePlayer>
+        private class RangeLimiter : EntityComponent<BasePlayer>
         {
-            public static RangeChecker Create(BasePlayer player, ComputerStation station, Drone drone, int maxDistance) =>
-                player.GetOrAddComponent<RangeChecker>().Init(station, drone, maxDistance);
+            public static RangeLimiter Create(BasePlayer player, ComputerStation station, Drone drone, int maxDistance) =>
+                player.GetOrAddComponent<RangeLimiter>().Init(station, drone, maxDistance);
 
             public static void Destroy(BasePlayer player)
             {
-                var component = player.GetComponent<RangeChecker>();
+                var component = player.GetComponent<RangeLimiter>();
                 if (component != null)
                     DestroyImmediate(component);
             }
@@ -133,102 +132,127 @@ namespace Oxide.Plugins
             }
 
             private ComputerStation _station;
-            private Drone _drone;
+            private Transform _stationTransform;
+            private Transform _droneTransform;
             private int _maxDistance;
 
             private int _previousDisplayedDistance;
 
             private int GetDistance() =>
-                Mathf.CeilToInt(_station.Distance(_drone));
+                Mathf.CeilToInt(Vector3.Distance(_stationTransform.position, _droneTransform.position));
 
-            public RangeChecker Init(ComputerStation station, Drone drone, int maxDistance)
+            public RangeLimiter Init(ComputerStation station, Drone drone, int maxDistance)
             {
                 _station = station;
-                _drone = drone;
+                _stationTransform = station.transform;
+                _droneTransform = drone.transform;
                 _maxDistance = maxDistance;
 
                 var secondsBetweenUpdates = _pluginConfig.UISettings.SecondsBetweenUpdates;
 
-                InvokeRandomized(CheckRange, 0, secondsBetweenUpdates, secondsBetweenUpdates * 0.1f);
-                UI.CreateDistanceUI(baseEntity, GetDistance(), _maxDistance);
+                InvokeRandomized(() =>
+                {
+                    _pluginInstance.TrackStart();
+                    CheckRange();
+                    _pluginInstance.TrackEnd();
+                }, 0, secondsBetweenUpdates, secondsBetweenUpdates * 0.1f);
 
                 return this;
             }
 
             public void CheckRange()
             {
-                var distance = Mathf.CeilToInt(_station.Distance(_drone));
+                var distance = GetDistance();
                 if (distance == _previousDisplayedDistance)
                     return;
 
                 if (distance > _maxDistance)
                 {
                     _station.StopControl(baseEntity);
-                    UI.CreateOutOfRangeUI(baseEntity);
+                    _pluginInstance._uiManager.CreateOutOfRangeUI(baseEntity);
                     return;
                 }
 
-                UI.CreateDistanceUI(baseEntity, distance, _maxDistance);
+                _pluginInstance._uiManager.CreateDistanceUI(baseEntity, distance, _maxDistance);
                 _previousDisplayedDistance = distance;
             }
 
-            public void OnDestroy() => UI.Destroy(baseEntity);
+            public void OnDestroy() => UIManager.Destroy(baseEntity);
         }
 
         #region UI
 
-        private static class UI
+        private class UIManager
         {
             private const string DistanceUI = "LimitedDroneRange.Distance";
             private const string OutOfRangeUI = "LimitedDroneRange.OutOfRange";
 
-            private static void CreateLabel(BasePlayer player, string uiName, string label, string color)
-            {
-                Destroy(player, uiName);
+            private const string PlaceholderUIName = "__UI_NAME__";
+            private const string PlaceholderText = "__TEXT__";
+            private const string PlaceholderColor = "__COLOR__";
 
-                var cuiElements = new CuiElementContainer
+            private string _cachedJson;
+
+            private string GetJsonWithPlaceholders()
+            {
+                if (_cachedJson == null)
                 {
+                    var cuiElements = new CuiElementContainer
                     {
-                        new CuiPanel
                         {
+                            new CuiPanel
+                            {
+                                RectTransform =
+                                {
+                                    AnchorMin = _pluginConfig.UISettings.AnchorMin,
+                                    AnchorMax = _pluginConfig.UISettings.AnchorMax,
+                                    OffsetMin = _pluginConfig.UISettings.OffsetMin,
+                                    OffsetMax = _pluginConfig.UISettings.OffsetMax,
+                                }
+                            },
+                            "Overlay",
+                            PlaceholderUIName
+                        }
+                    };
+
+                    cuiElements.Add(
+                        new CuiLabel
+                        {
+                            Text =
+                            {
+                                Text = PlaceholderText,
+                                Align = TextAnchor.MiddleCenter,
+                                Color = PlaceholderColor,
+                                FontSize = _pluginConfig.UISettings.TextSize,
+                            },
                             RectTransform =
                             {
-                                AnchorMin = _pluginConfig.UISettings.AnchorMin,
-                                AnchorMax = _pluginConfig.UISettings.AnchorMax,
-                                OffsetMin = _pluginConfig.UISettings.OffsetMin,
-                                OffsetMax = _pluginConfig.UISettings.OffsetMax,
+                                AnchorMin = "0 0",
+                                AnchorMax = "0 0",
+                                OffsetMin = $"{_pluginConfig.UISettings.TextSize * -3} 0",
+                                OffsetMax = $"{_pluginConfig.UISettings.TextSize * 3} {_pluginConfig.UISettings.TextSize * 1.5f}",
                             }
                         },
-                        "Overlay",
-                        uiName
-                    }
-                };
+                        PlaceholderUIName
+                    );
 
-                cuiElements.Add(
-                    new CuiLabel
-                    {
-                        Text =
-                        {
-                            Text = label,
-                            Align = TextAnchor.MiddleCenter,
-                            Color = color,
-                            FontSize = _pluginConfig.UISettings.TextSize,
-                        },
-                        RectTransform =
-                        {
-                            AnchorMin = "0 0",
-                            AnchorMax = "0 0",
-                            OffsetMin = $"{_pluginConfig.UISettings.TextSize * -3} 0",
-                            OffsetMax = $"{_pluginConfig.UISettings.TextSize * 3} {_pluginConfig.UISettings.TextSize * 1.5f}",
-                        }
-                    },
-                    uiName
-                );
+                    _cachedJson = CuiHelper.ToJson(cuiElements);
+                }
 
-                CuiHelper.AddUi(player, cuiElements);
+                return _cachedJson;
             }
 
-            public static void CreateDistanceUI(BasePlayer player, int distance, int maxDistance)
+            private void CreateLabel(BasePlayer player, string uiName, string text, string color)
+            {
+                var json = GetJsonWithPlaceholders()
+                    .Replace(PlaceholderUIName, uiName)
+                    .Replace(PlaceholderText, text)
+                    .Replace(PlaceholderColor, color);
+
+                CuiHelper.AddUi(player, json);
+            }
+
+            public void CreateDistanceUI(BasePlayer player, int distance, int maxDistance)
             {
                 Destroy(player, DistanceUI);
                 CreateLabel(
@@ -239,7 +263,7 @@ namespace Oxide.Plugins
                 );
             }
 
-            public static void CreateOutOfRangeUI(BasePlayer player)
+            public void CreateOutOfRangeUI(BasePlayer player)
             {
                 Destroy(player, OutOfRangeUI);
                 CreateLabel(
