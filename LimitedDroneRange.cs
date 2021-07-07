@@ -11,7 +11,7 @@ using VLB;
 
 namespace Oxide.Plugins
 {
-    [Info("Limited Drone Range", "WhiteThunder", "0.1.0")]
+    [Info("Limited Drone Range", "WhiteThunder", "1.0.0")]
     [Description("Limits how far RC drones can be controlled from computer stations.")]
     internal class LimitedDroneRange : CovalencePlugin
     {
