@@ -2,7 +2,6 @@
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using Oxide.Core;
-using Oxide.Core.Libraries.Covalence;
 using Oxide.Game.Rust.Cui;
 using System;
 using System.Collections.Generic;
@@ -58,10 +57,10 @@ namespace Oxide.Plugins
 
         private bool? OnBookmarkControl(ComputerStation station, BasePlayer player, string bookmarkName, Drone drone)
         {
-            if (!ShouldLimitRange(station, drone, player))
+            int maxRange;
+            if (!ShouldLimitRange(station, drone, player, out maxRange))
                 return null;
 
-            var maxRange = _pluginConfig.GetMaxRangeForPlayer(player);
             if (!IsWithinRange(station, drone, maxRange))
             {
                 UI.CreateOutOfRangeUI(player);
@@ -73,10 +72,10 @@ namespace Oxide.Plugins
 
         private void OnBookmarkControlStarted(ComputerStation station, BasePlayer player, string bookmarkName, Drone drone)
         {
-            if (!ShouldLimitRange(station, drone, player))
+            int maxRange;
+            if (!ShouldLimitRange(station, drone, player, out maxRange))
                 return;
 
-            var maxRange = _pluginConfig.GetMaxRangeForPlayer(player);
             RangeChecker.Create(player, station, drone, maxRange);
         }
 
@@ -104,13 +103,13 @@ namespace Oxide.Plugins
         private static string GetProfilePermission(string profileSuffix) =>
             $"{PermissionProfilePrefix}.{profileSuffix}";
 
-        private static bool ShouldLimitRange(ComputerStation station, Drone drone, BasePlayer player)
+        private static bool ShouldLimitRange(ComputerStation station, Drone drone, BasePlayer player, out int maxRange)
         {
-            if (LimitRangeWasBlocked(station, drone, player))
-                return  false;
+            maxRange = _pluginConfig.GetMaxRangeForPlayer(player);
+            if (maxRange <= 0)
+                return false;
 
-            var maxRange = _pluginConfig.GetMaxRangeForPlayer(player);
-            return maxRange > 0;
+            return !LimitRangeWasBlocked(station, drone, player);
         }
 
         #endregion
