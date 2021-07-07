@@ -83,7 +83,7 @@ namespace Oxide.Plugins
 
         private void OnBookmarkControlEnded(ComputerStation station, BasePlayer player, Drone drone)
         {
-            RangeLimiter.Destroy(player);
+            RangeLimiter.DestroyForPlayer(player);
         }
 
         #endregion
@@ -118,7 +118,7 @@ namespace Oxide.Plugins
             public static RangeLimiter Create(BasePlayer player, ComputerStation station, Drone drone, int maxDistance) =>
                 player.GetOrAddComponent<RangeLimiter>().Init(station, drone, maxDistance);
 
-            public static void Destroy(BasePlayer player)
+            public static void DestroyForPlayer(BasePlayer player)
             {
                 var component = player.GetComponent<RangeLimiter>();
                 if (component != null)
@@ -128,7 +128,7 @@ namespace Oxide.Plugins
             public static void DestroyAll()
             {
                 foreach (var player in BasePlayer.activePlayerList)
-                    Destroy(player);
+                    DestroyForPlayer(player);
             }
 
             private ComputerStation _station;
