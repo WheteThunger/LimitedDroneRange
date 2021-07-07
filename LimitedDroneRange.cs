@@ -33,6 +33,22 @@ namespace Oxide.Plugins
             _pluginInstance = this;
         }
 
+        private void OnServerInitialized()
+        {
+            foreach (var player in BasePlayer.activePlayerList)
+            {
+                var station = player.GetMounted() as ComputerStation;
+                if (station == null)
+                    continue;
+
+                var drone = station.currentlyControllingEnt.Get(serverside: true) as Drone;
+                if (drone == null)
+                    continue;
+
+                OnBookmarkControlStarted(station, player, string.Empty, drone);
+            }
+        }
+
         private void Unload()
         {
             RangeChecker.DestroyAll();
