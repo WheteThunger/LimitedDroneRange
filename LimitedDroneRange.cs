@@ -340,7 +340,7 @@ namespace Oxide.Plugins
             public int TextSize = 24;
 
             [JsonProperty("DefaultColor")]
-            public string DefaultColor = "0.2 0.75 0.2 1";
+            public string DefaultColor = "0.75 0.75 0.75 1";
 
             [JsonProperty("OutOfRangeColor")]
             public string OutOfRangeColor = "1 0.2 0.2 1";
