@@ -141,7 +141,7 @@ namespace Oxide.Plugins
             private int GetDistance() =>
                 Mathf.CeilToInt(Vector3.Distance(_stationTransform.position, _droneTransform.position));
 
-            public RangeLimiter Init(ComputerStation station, Drone drone, int maxDistance)
+            private RangeLimiter Init(ComputerStation station, Drone drone, int maxDistance)
             {
                 _station = station;
                 _stationTransform = station.transform;
@@ -160,7 +160,7 @@ namespace Oxide.Plugins
                 return this;
             }
 
-            public void CheckRange()
+            private void CheckRange()
             {
                 var distance = GetDistance();
                 if (distance == _previousDisplayedDistance)
