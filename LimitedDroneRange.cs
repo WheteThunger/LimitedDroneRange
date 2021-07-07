@@ -237,8 +237,8 @@ namespace Oxide.Plugins
                                 {
                                     AnchorMin = "0 0",
                                     AnchorMax = "0 0",
-                                    OffsetMin = $"{_pluginConfig.UISettings.TextSize * -3} 0",
-                                    OffsetMax = $"{_pluginConfig.UISettings.TextSize * 3} {_pluginConfig.UISettings.TextSize * 1.5f}",
+                                    OffsetMin = $"{_pluginConfig.UISettings.TextSize * -4} 0",
+                                    OffsetMax = $"{_pluginConfig.UISettings.TextSize * 4} {_pluginConfig.UISettings.TextSize * 1.5f}",
                                 },
                             },
                             Parent = PlaceholderUIName,
