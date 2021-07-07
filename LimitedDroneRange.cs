@@ -6,6 +6,7 @@ using Oxide.Game.Rust.Cui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq;
 using UnityEngine;
 using VLB;
 
@@ -349,13 +350,13 @@ namespace Oxide.Plugins
             {
                 new ColorConfig
                 {
-                    DistanceRemaining = 50,
-                    Color = "1 0.2 0.2 1",
+                    DistanceRemaining = 100,
+                    Color = "1 0.5 0 1",
                 },
                 new ColorConfig
                 {
-                    DistanceRemaining = 100,
-                    Color = "1 0.5 0 1",
+                    DistanceRemaining = 50,
+                    Color = "1 0.2 0.2 1",
                 },
             };
 
@@ -373,6 +374,13 @@ namespace Oxide.Plugins
                 }
 
                 return DefaultColor;
+            }
+
+            public void Init()
+            {
+                var colorConfigs = DynamicColors.ToList();
+                colorConfigs.Sort((config1, config2) => config1.DistanceRemaining.CompareTo(config2.DistanceRemaining));
+                DynamicColors = colorConfigs.ToArray();
             }
         }
 
@@ -413,6 +421,8 @@ namespace Oxide.Plugins
             {
                 foreach (var profile in ProfilesRequiringPermission)
                     profile.Init(pluginInstance);
+
+                UISettings.Init();
             }
 
             public int GetMaxRangeForPlayer(string userId)
