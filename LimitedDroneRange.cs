@@ -19,7 +19,6 @@ namespace Oxide.Plugins
         #region Fields
 
         private static LimitedDroneRange _pluginInstance;
-
         private static Configuration _pluginConfig;
 
         private const string PermissionProfilePrefix = "limiteddronerange";
@@ -31,14 +30,13 @@ namespace Oxide.Plugins
         private void Init()
         {
             _pluginConfig.Init(this);
-
             _pluginInstance = this;
         }
 
         private void Unload()
         {
             RangeChecker.DestroyAll();
-
+            _pluginConfig = null;
             _pluginInstance = null;
         }
 
@@ -50,7 +48,7 @@ namespace Oxide.Plugins
             var maxRange = _pluginConfig.GetMaxRangeForPlayer(player);
             if (!IsWithinRange(station, drone, maxRange))
             {
-                UI.ShowOutOfRange(player);
+                UI.CreateOutOfRangeUI(player);
                 return false;
             }
 
@@ -135,7 +133,7 @@ namespace Oxide.Plugins
                 _maxDistance = maxDistance;
 
                 InvokeRandomized(CheckRange, 0, 0.25f, 0.025f);
-                UI.Create(baseEntity, GetDistance(), _maxDistance);
+                UI.CreateDistanceUI(baseEntity, GetDistance(), _maxDistance);
 
                 return this;
             }
@@ -149,11 +147,11 @@ namespace Oxide.Plugins
                 if (distance > _maxDistance)
                 {
                     _station.StopControl(baseEntity);
-                    UI.ShowOutOfRange(baseEntity);
+                    UI.CreateOutOfRangeUI(baseEntity);
                     return;
                 }
 
-                UI.Update(baseEntity, distance, _maxDistance);
+                UI.CreateDistanceUI(baseEntity, distance, _maxDistance);
                 _previousDisplayedDistance = distance;
             }
 
@@ -168,7 +166,7 @@ namespace Oxide.Plugins
             private const string DistanceUI = "LimitedDroneRange.Distance";
             private const string OutOfRangeUI = "LimitedDroneRange.OutOfRange";
 
-            private static void CreateInternal(BasePlayer player, string name, string label, string color)
+            private static void SendLabel(BasePlayer player, string name, string label, string color)
             {
                 Destroy(player);
 
@@ -219,8 +217,10 @@ namespace Oxide.Plugins
             private const string CautionRangeColor = "1 0.5 0 1";
             private const string OutOfRangeColor = "1 0.2 0.2 1";
 
-            public static void Create(BasePlayer player, float distance, float maxDistance)
+            public static void CreateDistanceUI(BasePlayer player, float distance, float maxDistance)
             {
+                Destroy(player);
+
                 var color = SafeRangeColor;
 
                 if (maxDistance - distance < 50)
@@ -228,20 +228,14 @@ namespace Oxide.Plugins
                 else if (maxDistance - distance < 100)
                     color = CautionRangeColor;
 
-                CreateInternal(player, DistanceUI, $"{distance}m / {maxDistance}m", color);
+                SendLabel(player, DistanceUI, _pluginInstance.GetMessage(player, Lang.Distance, distance, maxDistance), color);
             }
 
-            public static void ShowOutOfRange(BasePlayer player)
+            public static void CreateOutOfRangeUI(BasePlayer player)
             {
                 Destroy(player, OutOfRangeUI);
-                CreateInternal(player, OutOfRangeUI, "OUT OF RANGE", "1 0.2 0.2 1");
+                SendLabel(player, OutOfRangeUI, _pluginInstance.GetMessage(player, Lang.OutOfRange), "1 0.2 0.2 1");
                 player.Invoke(() => Destroy(player, OutOfRangeUI), 1);
-            }
-
-            public static void Update(BasePlayer player, float distance, float maxDistance)
-            {
-                Destroy(player);
-                Create(player, distance, maxDistance);
             }
 
             public static void Destroy(BasePlayer player, string name = DistanceUI)
@@ -448,26 +442,27 @@ namespace Oxide.Plugins
 
         #region Localization
 
-        private void ReplyToPlayer(IPlayer player, string messageName, params object[] args) =>
-            player.Reply(string.Format(GetMessage(player, messageName), args));
-
-        private void ChatMessage(BasePlayer player, string messageName, params object[] args) =>
-            player.ChatMessage(string.Format(GetMessage(player.IPlayer, messageName), args));
-
-        private string GetMessage(IPlayer player, string messageName, params object[] args) =>
-            GetMessage(player.Id, messageName, args);
-
         private string GetMessage(string playerId, string messageName, params object[] args)
         {
             var message = lang.GetMessage(messageName, this, playerId);
             return args.Length > 0 ? string.Format(message, args) : message;
         }
 
+        private string GetMessage(BasePlayer player, string messageName, params object[] args) =>
+            GetMessage(player.UserIDString, messageName, args);
+
+        private class Lang
+        {
+            public const string OutOfRange = "UI.OutOfRange";
+            public const string Distance = "UI.Distance";
+        }
+
         protected override void LoadDefaultMessages()
         {
             lang.RegisterMessages(new Dictionary<string, string>
             {
-
+                [Lang.Distance] = "{0}m / {1}m",
+                [Lang.OutOfRange] = "OUT OF RANGE",
             }, this, "en");
         }
 

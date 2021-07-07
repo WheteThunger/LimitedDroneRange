@@ -47,3 +47,12 @@ Default configuration:
 - `ProfilesRequiringPermission` -- Each profile in this list generates a permission like `limiteddronerange.<suffix>`. Granting a profile to a player determines how far they can pilot drones away from the host computer station, overriding `DefaultMaxRange`.
   - `PermissionSuffix` -- Determines the generated permission of format `limiteddronerange.<suffix>`.
   - `MaxRange` -- Determines the max range for players with this profile.
+
+## Localization
+
+```json
+{
+  "UI.Distance": "{0}m / {1}m",
+  "UI.OutOfRange": "OUT OF RANGE"
+}
+```
