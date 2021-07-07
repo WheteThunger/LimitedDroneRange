@@ -58,10 +58,10 @@ namespace Oxide.Plugins
         private bool? OnBookmarkControl(ComputerStation station, BasePlayer player, string bookmarkName, Drone drone)
         {
             int maxRange;
-            if (!ShouldLimitRange(station, drone, player, out maxRange))
+            if (!ShouldLimitRange(drone, station, player, out maxRange))
                 return null;
 
-            if (!IsWithinRange(station, drone, maxRange))
+            if (!IsWithinRange(drone, station, maxRange))
             {
                 UI.CreateOutOfRangeUI(player);
                 return false;
@@ -73,7 +73,7 @@ namespace Oxide.Plugins
         private void OnBookmarkControlStarted(ComputerStation station, BasePlayer player, string bookmarkName, Drone drone)
         {
             int maxRange;
-            if (!ShouldLimitRange(station, drone, player, out maxRange))
+            if (!ShouldLimitRange(drone, station, player, out maxRange))
                 return;
 
             RangeChecker.Create(player, station, drone, maxRange);
@@ -88,28 +88,28 @@ namespace Oxide.Plugins
 
         #region Helper Methods
 
-        private static bool LimitRangeWasBlocked(ComputerStation station, Drone drone, BasePlayer player)
+        private static bool LimitRangeWasBlocked(Drone drone, ComputerStation station, BasePlayer player)
         {
-            object hookResult = Interface.CallHook("OnDroneRangeLimit", station, drone, player);
+            object hookResult = Interface.CallHook("OnDroneRangeLimit", drone, station, player);
             return hookResult is bool && (bool)hookResult == false;
         }
 
         private static float GetDistance(BaseEntity entity1, BaseEntity entity2) =>
             Vector3.Distance(entity1.transform.position, entity2.transform.position);
 
-        private static bool IsWithinRange(ComputerStation station, Drone drone, float range) =>
+        private static bool IsWithinRange(Drone drone, ComputerStation station, float range) =>
             station.Distance(drone) < range;
 
         private static string GetProfilePermission(string profileSuffix) =>
             $"{PermissionProfilePrefix}.{profileSuffix}";
 
-        private static bool ShouldLimitRange(ComputerStation station, Drone drone, BasePlayer player, out int maxRange)
+        private static bool ShouldLimitRange(Drone drone, ComputerStation station, BasePlayer player, out int maxRange)
         {
             maxRange = _pluginConfig.GetMaxRangeForPlayer(player);
             if (maxRange <= 0)
                 return false;
 
-            return !LimitRangeWasBlocked(station, drone, player);
+            return !LimitRangeWasBlocked(drone, station, player);
         }
 
         #endregion

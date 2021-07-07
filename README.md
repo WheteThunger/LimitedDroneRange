@@ -83,7 +83,7 @@ Default configuration:
 #### OnDroneRangeLimit
 
 ```csharp
-bool? OnDroneRangeLimit(ComputerStation station, Drone drone, BasePlayer player)
+bool? OnDroneRangeLimit(Drone drone, ComputerStation station, BasePlayer player)
 ```
 
 - Called after a player has started controlling a drone, when this plugin is about to start limiting its max range
