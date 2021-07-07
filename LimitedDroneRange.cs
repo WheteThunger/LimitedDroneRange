@@ -61,12 +61,12 @@ namespace Oxide.Plugins
                 return;
 
             var maxRange = _pluginConfig.GetMaxRangeForPlayer(player);
-            RangeChecker.AddToPlayer(player, station, drone, maxRange);
+            RangeChecker.Create(player, station, drone, maxRange);
         }
 
         private void OnBookmarkControlEnded(ComputerStation station, BasePlayer player, Drone drone)
         {
-            RangeChecker.RemoveFromPlayer(player);
+            RangeChecker.Destroy(player);
         }
 
         #endregion
@@ -101,10 +101,10 @@ namespace Oxide.Plugins
 
         private class RangeChecker : EntityComponent<BasePlayer>
         {
-            public static RangeChecker AddToPlayer(BasePlayer player, ComputerStation station, Drone drone, float maxDistance) =>
+            public static RangeChecker Create(BasePlayer player, ComputerStation station, Drone drone, int maxDistance) =>
                 player.GetOrAddComponent<RangeChecker>().Init(station, drone, maxDistance);
 
-            public static void RemoveFromPlayer(BasePlayer player)
+            public static void Destroy(BasePlayer player)
             {
                 var component = player.GetComponent<RangeChecker>();
                 if (component != null)
@@ -114,25 +114,27 @@ namespace Oxide.Plugins
             public static void DestroyAll()
             {
                 foreach (var player in BasePlayer.activePlayerList)
-                    RemoveFromPlayer(player);
+                    Destroy(player);
             }
 
             private ComputerStation _station;
             private Drone _drone;
-            private float _maxDistance;
+            private int _maxDistance;
 
             private int _previousDisplayedDistance;
 
             private int GetDistance() =>
                 Mathf.CeilToInt(_station.Distance(_drone));
 
-            public RangeChecker Init(ComputerStation station, Drone drone, float maxDistance)
+            public RangeChecker Init(ComputerStation station, Drone drone, int maxDistance)
             {
                 _station = station;
                 _drone = drone;
                 _maxDistance = maxDistance;
 
-                InvokeRandomized(CheckRange, 0, 0.25f, 0.025f);
+                var secondsBetweenUpdates = _pluginConfig.UISettings.SecondsBetweenUpdates;
+
+                InvokeRandomized(CheckRange, 0, secondsBetweenUpdates, secondsBetweenUpdates * 0.1f);
                 UI.CreateDistanceUI(baseEntity, GetDistance(), _maxDistance);
 
                 return this;
@@ -155,8 +157,7 @@ namespace Oxide.Plugins
                 _previousDisplayedDistance = distance;
             }
 
-            public void OnDestroy() =>
-                UI.Destroy(baseEntity);
+            public void OnDestroy() => UI.Destroy(baseEntity);
         }
 
         #region UI
@@ -166,9 +167,9 @@ namespace Oxide.Plugins
             private const string DistanceUI = "LimitedDroneRange.Distance";
             private const string OutOfRangeUI = "LimitedDroneRange.OutOfRange";
 
-            private static void SendLabel(BasePlayer player, string name, string label, string color)
+            private static void CreateLabel(BasePlayer player, string uiName, string label, string color)
             {
-                Destroy(player);
+                Destroy(player, uiName);
 
                 var cuiElements = new CuiElementContainer
                 {
@@ -177,14 +178,14 @@ namespace Oxide.Plugins
                         {
                             RectTransform =
                             {
-                                AnchorMin = "0.5 0",
-                                AnchorMax = "0.5 0",
-                                OffsetMin = "0 75",
-                                OffsetMax = "0 75",
+                                AnchorMin = _pluginConfig.UISettings.AnchorMin,
+                                AnchorMax = _pluginConfig.UISettings.AnchorMax,
+                                OffsetMin = _pluginConfig.UISettings.OffsetMin,
+                                OffsetMax = _pluginConfig.UISettings.OffsetMax,
                             }
                         },
                         "Overlay",
-                        name
+                        uiName
                     }
                 };
 
@@ -196,57 +197,54 @@ namespace Oxide.Plugins
                             Text = label,
                             Align = TextAnchor.MiddleCenter,
                             Color = color,
-                            FontSize = 30,
+                            FontSize = _pluginConfig.UISettings.TextSize,
                         },
                         RectTransform =
                         {
                             AnchorMin = "0 0",
                             AnchorMax = "0 0",
-                            OffsetMin = "-200 0",
-                            OffsetMax = "200 50",
+                            OffsetMin = $"{_pluginConfig.UISettings.TextSize * -3} 0",
+                            OffsetMax = $"{_pluginConfig.UISettings.TextSize * 3} {_pluginConfig.UISettings.TextSize * 1.5f}",
                         }
                     },
-                    name
+                    uiName
                 );
 
                 CuiHelper.AddUi(player, cuiElements);
             }
 
-            private const string SafeRangeColor = "0 0.75 0 1";
-            private const string DangeRangerColor = "1 0.2 0.2 1";
-            private const string CautionRangeColor = "1 0.5 0 1";
-            private const string OutOfRangeColor = "1 0.2 0.2 1";
-
-            public static void CreateDistanceUI(BasePlayer player, float distance, float maxDistance)
+            public static void CreateDistanceUI(BasePlayer player, int distance, int maxDistance)
             {
-                Destroy(player);
-
-                var color = SafeRangeColor;
-
-                if (maxDistance - distance < 50)
-                    color = DangeRangerColor;
-                else if (maxDistance - distance < 100)
-                    color = CautionRangeColor;
-
-                SendLabel(player, DistanceUI, _pluginInstance.GetMessage(player, Lang.Distance, distance, maxDistance), color);
+                Destroy(player, DistanceUI);
+                CreateLabel(
+                    player,
+                    DistanceUI,
+                    _pluginInstance.GetMessage(player, Lang.Distance, distance, maxDistance),
+                    _pluginConfig.UISettings.GetDynamicColor(distance, maxDistance)
+                );
             }
 
             public static void CreateOutOfRangeUI(BasePlayer player)
             {
                 Destroy(player, OutOfRangeUI);
-                SendLabel(player, OutOfRangeUI, _pluginInstance.GetMessage(player, Lang.OutOfRange), "1 0.2 0.2 1");
+                CreateLabel(
+                    player,
+                    OutOfRangeUI,
+                    _pluginInstance.GetMessage(player, Lang.OutOfRange),
+                    _pluginConfig.UISettings.OutOfRangeColor
+                );
                 player.Invoke(() => Destroy(player, OutOfRangeUI), 1);
             }
 
-            public static void Destroy(BasePlayer player, string name = DistanceUI)
+            public static void Destroy(BasePlayer player, string uiName = DistanceUI)
             {
-                CuiHelper.DestroyUi(player, name);
+                CuiHelper.DestroyUi(player, uiName);
             }
 
             public static void DestroyAll()
             {
                 foreach (var player in BasePlayer.activePlayerList)
-                    Destroy(player);
+                    Destroy(player, DistanceUI);
             }
         }
 
@@ -260,7 +258,7 @@ namespace Oxide.Plugins
             public string PermissionSuffix;
 
             [JsonProperty("MaxRange")]
-            public float MaxRange;
+            public int MaxRange;
 
             [JsonIgnore]
             public string Permission;
@@ -275,10 +273,74 @@ namespace Oxide.Plugins
             }
         }
 
+        private class ColorConfig
+        {
+            [JsonProperty("DistanceFromMax")]
+            public int DistanceFromMax;
+
+            [JsonProperty("Color")]
+            public string Color;
+        }
+
+        private class UISettings
+        {
+            [JsonProperty("AnchorMin")]
+            public string AnchorMin = "0.5 0";
+
+            [JsonProperty("AnchorMax")]
+            public string AnchorMax = "0.5 0";
+
+            [JsonProperty("OffsetMin")]
+            public string OffsetMin = "0 75";
+
+            [JsonProperty("OffsetMax")]
+            public string OffsetMax = "0 75";
+
+            [JsonProperty("TextSize")]
+            public int TextSize = 24;
+
+            [JsonProperty("DefaultColor")]
+            public string DefaultColor = "0.2 0.75 0.2 1";
+
+            [JsonProperty("OutOfRangeColor")]
+            public string OutOfRangeColor = "1 0.2 0.2 1";
+
+            [JsonProperty("DynamicColors")]
+            public ColorConfig[] DynamicColors = new ColorConfig[]
+            {
+                new ColorConfig
+                {
+                    DistanceFromMax = 50,
+                    Color = "1 0.2 0.2 1",
+                },
+                new ColorConfig
+                {
+                    DistanceFromMax = 100,
+                    Color = "1 0.5 0 1",
+                },
+            };
+
+            [JsonProperty("SecondsBetweenUpdates")]
+            public float SecondsBetweenUpdates = 0.5f;
+
+            public string GetDynamicColor(int distance, int maxDistance)
+            {
+                var distanceFromMax = maxDistance - distance;
+
+                foreach (var colorConfig in DynamicColors)
+                {
+                    if (distanceFromMax < colorConfig.DistanceFromMax)
+                        return colorConfig.Color;
+                }
+
+                return DefaultColor;
+            }
+        }
+
         private class Configuration : SerializableConfiguration
         {
             [JsonProperty("DefaultMaxRange")]
-            public float DefaultMaxRange = 500;
+            public int DefaultMaxRange = 500;
 
             [JsonProperty("ProfilesRequiringPermission")]
             public RangeProfile[] ProfilesRequiringPermission = new RangeProfile[]
@@ -305,13 +367,16 @@ namespace Oxide.Plugins
                 },
             };
 
+            [JsonProperty("UISettings")]
+            public UISettings UISettings = new UISettings();
+
             public void Init(LimitedDroneRange pluginInstance)
             {
                 foreach (var profile in ProfilesRequiringPermission)
                     profile.Init(pluginInstance);
             }
 
-            public float GetMaxRangeForPlayer(string userId)
+            public int GetMaxRangeForPlayer(string userId)
             {
                 if (ProfilesRequiringPermission == null)
                     return DefaultMaxRange;
@@ -326,7 +391,7 @@ namespace Oxide.Plugins
                 return DefaultMaxRange;
             }
 
-            public float GetMaxRangeForPlayer(BasePlayer player) =>
+            public int GetMaxRangeForPlayer(BasePlayer player) =>
                 GetMaxRangeForPlayer(player.UserIDString);
         }
 

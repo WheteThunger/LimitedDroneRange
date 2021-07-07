@@ -21,25 +21,45 @@ Default configuration:
 
 ```json
 {
-  "DefaultMaxRange": 500.0,
+  "DefaultMaxRange": 500,
   "ProfilesRequiringPermission": [
     {
       "PermissionSuffix": "short",
-      "MaxRange": 250.0
+      "MaxRange": 250
     },
     {
       "PermissionSuffix": "medium",
-      "MaxRange": 500.0
+      "MaxRange": 500
     },
     {
       "PermissionSuffix": "long",
-      "MaxRange": 1000.0
+      "MaxRange": 1000
     },
     {
       "PermissionSuffix": "unlimited",
-      "MaxRange": 0.0
+      "MaxRange": 0
     }
-  ]
+  ],
+  "UISettings": {
+    "AnchorMin": "0.5 0",
+    "AnchorMax": "0.5 0",
+    "OffsetMin": "0 75",
+    "OffsetMax": "0 75",
+    "TextSize": 24,
+    "DefaultColor": "0.2 0.75 0.2 1",
+    "OutOfRangeColor": "1 0.2 0.2 1",
+    "DynamicColors": [
+      {
+        "DistanceFromMax": 50,
+        "Color": "1 0.2 0.2 1"
+      },
+      {
+        "DistanceFromMax": 100,
+        "Color": "1 0.5 0 1"
+      }
+    ],
+    "SecondsBetweenUpdates": 0.5
+  }
 }
 ```
 
@@ -47,6 +67,7 @@ Default configuration:
 - `ProfilesRequiringPermission` -- Each profile in this list generates a permission like `limiteddronerange.<suffix>`. Granting a profile to a player determines how far they can pilot drones away from the host computer station, overriding `DefaultMaxRange`.
   - `PermissionSuffix` -- Determines the generated permission of format `limiteddronerange.<suffix>`.
   - `MaxRange` -- Determines the max range for players with this profile.
+- `UISettings` -- Options to control the display of the UI.
 
 ## Localization
 
