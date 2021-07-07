@@ -86,6 +86,6 @@ Default configuration:
 bool? OnDroneRangeLimit(ComputerStation station, Drone drone, BasePlayer player)
 ```
 
-- Called after a player has started controlling a drone, and this plugin is going to start limiting its max range
+- Called after a player has started controlling a drone, when this plugin is about to start limiting its max range
 - Returning `false` will prevent this plugin from limiting the drone's max range or showing a UI to the player
 - Returning `null` will result in the default behavior
