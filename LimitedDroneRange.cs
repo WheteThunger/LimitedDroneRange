@@ -13,7 +13,7 @@ using VLB;
 namespace Oxide.Plugins
 {
     [Info("Limited Drone Range", "WhiteThunder", "0.1.0")]
-    [Description("Allows limiting how far RC drones can be controlled from computer stations.")]
+    [Description("Limits how far RC drones can be controlled from computer stations.")]
     internal class LimitedDroneRange : CovalencePlugin
     {
         #region Fields
@@ -291,22 +291,22 @@ namespace Oxide.Plugins
             {
                 new RangeProfile()
                 {
-                    PermissionSuffix = "shortrange",
+                    PermissionSuffix = "short",
                     MaxRange = 250,
                 },
                 new RangeProfile()
                 {
-                    PermissionSuffix = "mediumrange",
+                    PermissionSuffix = "medium",
                     MaxRange = 500,
                 },
                 new RangeProfile()
                 {
-                    PermissionSuffix = "longrange",
+                    PermissionSuffix = "long",
                     MaxRange = 1000,
                 },
                 new RangeProfile()
                 {
-                    PermissionSuffix = "unlimitedrange",
+                    PermissionSuffix = "unlimited",
                     MaxRange = 0,
                 },
             };
