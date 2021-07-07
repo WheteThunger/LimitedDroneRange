@@ -369,7 +369,7 @@ namespace Oxide.Plugins
 
                 foreach (var colorConfig in DynamicColors)
                 {
-                    if (distanceFromMax < colorConfig.DistanceRemaining)
+                    if (distanceFromMax <= colorConfig.DistanceRemaining)
                         return colorConfig.Color;
                 }
 
