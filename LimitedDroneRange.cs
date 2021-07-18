@@ -97,7 +97,7 @@ namespace Oxide.Plugins
         }
 
         private static bool IsWithinRange(Drone drone, ComputerStation station, float range) =>
-            Vector3.Distance(station.transform.position, drone.transform.position) < range;
+            (station.transform.position - drone.transform.position).sqrMagnitude < range * range;
 
         private static string GetProfilePermission(string profileSuffix) =>
             $"{PermissionProfilePrefix}.{profileSuffix}";
@@ -138,9 +138,6 @@ namespace Oxide.Plugins
 
             private int _previousDisplayedDistance;
 
-            private int GetDistance() =>
-                Mathf.CeilToInt(Vector3.Distance(_stationTransform.position, _droneTransform.position));
-
             private RangeLimiter Init(ComputerStation station, Drone drone, int maxDistance)
             {
                 _station = station;
@@ -162,16 +159,17 @@ namespace Oxide.Plugins
 
             private void CheckRange()
             {
-                var distance = GetDistance();
-                if (distance == _previousDisplayedDistance)
-                    return;
-
-                if (distance > _maxDistance)
+                var sqrDistance = (_stationTransform.position - _droneTransform.position).sqrMagnitude;
+                if (sqrDistance > _maxDistance * _maxDistance)
                 {
                     _station.StopControl(baseEntity);
                     _pluginInstance._uiManager.CreateOutOfRangeUI(baseEntity);
                     return;
                 }
+
+                var distance = Mathf.CeilToInt(Mathf.Sqrt(sqrDistance));
+                if (distance == _previousDisplayedDistance)
+                    return;
 
                 _pluginInstance._uiManager.CreateDistanceUI(baseEntity, distance, _maxDistance);
                 _previousDisplayedDistance = distance;
