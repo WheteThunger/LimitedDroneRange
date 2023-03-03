@@ -1,7 +1,7 @@
 ## Features
 
 - Limits how far RC drones can be controlled from computer stations
-- Allows configuring range limts per player using permissions
+- Allows configuring range limits per player using permissions
 - Displays a UI while piloting a drone, showing current and max range, and which changes color near max range
 
 ## Permissions
