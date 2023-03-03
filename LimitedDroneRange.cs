@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Limited Drone Range", "WhiteThunder", "1.0.0")]
+    [Info("Limited Drone Range", "WhiteThunder", "1.1.0")]
     [Description("Limits how far RC drones can be controlled from computer stations.")]
     internal class LimitedDroneRange : CovalencePlugin
     {
