@@ -4,6 +4,10 @@
 - Allows configuring range limits per player using permissions
 - Displays a UI while piloting a drone, showing current and max range, and which changes color near max range
 
+## No-plugin alternative
+
+Since the March 2023 Rust update, you can now control max drone range using the `drone.maxcontrolrange` ConVar. However, this plugin is still useful if you want to change max drone range for specific players.
+
 ## Permissions
 
 The following permissions come with the plugin's **default configuration**. Granting one to a player determines how far they can pilot drones away from computer stations, overriding the default. Granting multiple profiles to a player will cause only the last one to apply, based on the order in the config.

@@ -5,6 +5,7 @@ using Oxide.Game.Rust.Cui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Network;
 using UnityEngine;
 
 namespace Oxide.Plugins
@@ -15,10 +16,14 @@ namespace Oxide.Plugins
     {
         #region Fields
 
+        private readonly object False = false;
+        private const float VanillaStaticDistanceFraction = 0.73f;
+        private const int ForcedMaxRange = 100000;
+        private const string DroneMaxControlRangeConVar = "drone.maxcontrolrange";
+        private readonly string ForcedMaxRangeString = ForcedMaxRange.ToString();
+
         private Configuration _config;
         private UIManager _uiManager = new UIManager();
-
-        private readonly object False = false;
 
         #endregion
 
@@ -31,6 +36,12 @@ namespace Oxide.Plugins
 
         private void OnServerInitialized()
         {
+            if (Drone.maxControlRange < ForcedMaxRange)
+            {
+                Drone.maxControlRange = ForcedMaxRange;
+                LogWarning($"Updated {DroneMaxControlRangeConVar} ConVar to {ForcedMaxRange} so that the plugin can control drone max range.");
+            }
+
             foreach (var player in BasePlayer.activePlayerList)
             {
                 var station = player.GetMounted() as ComputerStation;
@@ -65,7 +76,10 @@ namespace Oxide.Plugins
         {
             int maxRange;
             if (!ShouldLimitRange(drone, station, player, out maxRange))
+            {
+                SendMaxRangeConVar(player, ForcedMaxRangeString);
                 return;
+            }
 
             RangeLimiter.AddToPlayer(this, player, station, drone, maxRange);
         }
@@ -88,6 +102,21 @@ namespace Oxide.Plugins
         private static bool IsWithinRange(Drone drone, ComputerStation station, float range)
         {
             return (station.transform.position - drone.transform.position).sqrMagnitude < range * range;
+        }
+
+        private static void SendReplicatedVar(Connection connection, string fullName, string value)
+        {
+            var netWrite = Net.sv.StartWrite();
+            netWrite.PacketID(Message.Type.ConsoleReplicatedVars);
+            netWrite.Int32(1);
+            netWrite.String(fullName);
+            netWrite.String(value);
+            netWrite.Send(new SendInfo(connection));
+        }
+
+        private static void SendMaxRangeConVar(BasePlayer player, string value)
+        {
+            SendReplicatedVar(player.Connection, DroneMaxControlRangeConVar, value);
         }
 
         private bool ShouldLimitRange(Drone drone, ComputerStation station, BasePlayer player, out int maxRange)
@@ -122,6 +151,10 @@ namespace Oxide.Plugins
                     component.CheckRange();
                     plugin.TrackEnd();
                 }, 0, secondsBetweenUpdates, secondsBetweenUpdates * 0.1f);
+
+                // Show 25% of vanilla static.
+                var staticFraction = Mathf.Lerp(VanillaStaticDistanceFraction, 1, 0.25f);
+                SendMaxRangeConVar(player, Mathf.CeilToInt(maxDistance / staticFraction).ToString());
 
                 return component;
             }
