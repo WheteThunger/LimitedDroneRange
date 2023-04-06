@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Limited Drone Range", "WhiteThunder", "1.1.0")]
+    [Info("Limited Drone Range", "WhiteThunder", "1.1.1")]
     [Description("Limits how far RC drones can be controlled from computer stations.")]
     internal class LimitedDroneRange : CovalencePlugin
     {
@@ -552,7 +552,19 @@ namespace Oxide.Plugins
                     throw new JsonException();
                 }
 
-                if (MaybeUpdateConfig(_config))
+                var changed = MaybeUpdateConfig(_config);
+
+                if (_config.UISettings.AnchorMin == "0.5 0"
+                    && _config.UISettings.AnchorMax == "0.5 0"
+                    && _config.UISettings.OffsetMin == "0 75"
+                    && _config.UISettings.OffsetMax == "0 75")
+                {
+                    _config.UISettings.OffsetMin = "0 47";
+                    _config.UISettings.OffsetMax = "0 47";
+                    changed = true;
+                }
+
+                if (changed)
                 {
                     LogWarning("Configuration appears to be outdated; updating and saving");
                     SaveConfig();
