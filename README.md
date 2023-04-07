@@ -47,8 +47,8 @@ Default configuration:
   "UISettings": {
     "AnchorMin": "0.5 0",
     "AnchorMax": "0.5 0",
-    "OffsetMin": "0 75",
-    "OffsetMax": "0 75",
+    "OffsetMin": "0 47",
+    "OffsetMax": "0 47",
     "TextSize": 24,
     "DefaultColor": "0.75 0.75 0.75 1",
     "OutOfRangeColor": "1 0.2 0.2 1",
