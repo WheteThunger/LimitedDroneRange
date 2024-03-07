@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Limited Drone Range", "WhiteThunder", "1.1.1")]
+    [Info("Limited Drone Range", "WhiteThunder", "1.1.2")]
     [Description("Limits how far RC drones can be controlled from computer stations.")]
     internal class LimitedDroneRange : CovalencePlugin
     {
@@ -106,8 +106,7 @@ namespace Oxide.Plugins
 
         private static void SendReplicatedVar(Connection connection, string fullName, string value)
         {
-            var netWrite = Net.sv.StartWrite();
-            netWrite.PacketID(Message.Type.ConsoleReplicatedVars);
+            var netWrite = Net.sv.StartWrite(Message.Type.ConsoleReplicatedVars);
             netWrite.Int32(1);
             netWrite.String(fullName);
             netWrite.String(value);
